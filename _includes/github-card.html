@@ -1,0 +1,111 @@
+<div class="github-card-compact" data-url="{{ include.url }}" style="margin: 1rem 0; max-width: 600px;">
+  <a href="{{ include.url }}" target="_blank" rel="noopener noreferrer" style="text-decoration: none !important; border: none !important; display: block;">
+    <div style="background: var(--card-bg); border: 1px solid var(--main-border-color); border-radius: 8px; padding: 12px 16px; box-shadow: var(--card-shadow); transition: background 0.2s ease;">
+      
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted-color); margin-bottom: 6px;">
+        <i class="fab fa-github" style="font-size: 1rem;"></i>
+        <span class="gh-repo" style="font-weight: 500; letter-spacing: 0.1px;">불러오는 중...</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+        <div class="gh-status-icon" style="display: flex; align-items: center; justify-content: center; width: 16px; min-height: 1.4rem;">
+          <i class="fas fa-circle-notch fa-spin" style="color: var(--text-muted-color); font-size: 0.85rem;"></i>
+        </div>
+        <div class="gh-title" style="font-size: 1rem; font-weight: 600; color: var(--heading-color); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+          Loading...
+        </div>
+      </div>
+
+      <div class="gh-desc" style="font-size: 0.85rem; color: var(--text-muted-color); margin: 4px 0 0 24px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; opacity: 0.8;">
+        Synchronize information from GitHub...
+      </div>
+    </div>
+  </a>
+</div>
+
+<script>
+(function() {
+  const CONFIG = {
+    LIMIT: 90,
+    COLOR: {
+      OPEN: '#3fb950',
+      CLOSED: '#8957e5'
+    },
+    ICON: {
+      ISSUE_OPEN: 'fas fa-circle-dot',
+      ISSUE_CLOSED: 'fas fa-check-circle',
+      PR_OPEN: 'fas fa-code-pull-request',
+      PR_CLOSED: 'fas fa-code-merge'
+    }
+  };
+  
+  const cardUrl = "{{ include.url }}";
+  const container = document.querySelector(`[data-url="${cardUrl}"]`);
+  if (!container) return;
+
+  const parseUrl = (url) => {
+    const p = url.replace("https://github.com/", "").split('/');
+    return { owner: p[0], repo: p[1], num: p[p.length - 1] };
+  };
+
+  const sanitizeText = (text, limit) => {
+    if (!text) return '내용 요약이 없습니다.';
+    
+    const clean = text.replace(/!\[.*\]\(.*\)/g, '')
+                      .replace(/\[(.*)\]\(.*\)/g, '$1')
+                      .replace(/[#*`\r\n]/g, ' ')
+                      .trim();
+                      
+    if (clean.length > limit) {
+      return clean.substring(0, limit) + '...';
+    }
+    return clean;
+  };
+
+  const getStatusTheme = (data) => {
+    const isPR = !!data.pull_request;
+    const isClosed = data.state === 'closed';
+
+    if (isPR) {
+      if (isClosed) {
+        return { icon: CONFIG.ICON.PR_CLOSED, color: CONFIG.COLOR.CLOSED };
+      }
+      return { icon: CONFIG.ICON.PR_OPEN, color: CONFIG.COLOR.OPEN };
+    }
+
+    if (isClosed) {
+      return { icon: CONFIG.ICON.ISSUE_CLOSED, color: CONFIG.COLOR.CLOSED };
+    }
+    return { icon: CONFIG.ICON.ISSUE_OPEN, color: CONFIG.COLOR.OPEN };
+  };
+  
+  const renderStatus = (target, data) => {
+    const iconEl = target.querySelector('.gh-status-icon i');
+    
+    const theme = getStatusTheme(data);
+
+    iconEl.className = theme.icon;
+    iconEl.style.color = theme.color;
+  };
+
+  const info = parseUrl(cardUrl);
+  const apiUrl = `https://api.github.com/repos/${info.owner}/${info.repo}/issues/${info.num}`;
+
+  fetch(apiUrl)
+    .then(res => {
+      if (!res.ok) throw new Error('API limit or not found');
+      return res.json();
+    })
+    .then(data => {
+      container.querySelector('.gh-title').innerText = data.title;
+      container.querySelector('.gh-repo').innerText = `${info.owner}/${info.repo} #${data.number}`;
+      container.querySelector('.gh-desc').innerText = sanitizeText(data.body, 90);
+      renderStatus(container, data);
+    })
+    .catch(err => {
+      container.querySelector('.gh-title').innerText = "GitHub 링크를 확인할 수 없습니다.";
+      container.querySelector('.gh-status-icon i').className = "fas fa-exclamation-triangle";
+      container.querySelector('.gh-status-icon i').style.color = "#d2603a";
+    });
+})();
+</script>
