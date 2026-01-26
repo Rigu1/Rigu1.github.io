@@ -1,5 +1,9 @@
 # The Site Configuration
 
+# plugins
+plugins:
+  - jekyll-linkpreview
+
 # Import the theme
 theme: jekyll-theme-chirpy
 
