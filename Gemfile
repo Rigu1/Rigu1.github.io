@@ -15,4 +15,5 @@ gem "wdm", "~> 0.2.0", :platforms => [:mingw, :x64_mingw, :mswin]
 
 group :jekyll_plugins do
   gem "jekyll-linkpreview", :git => "https://github.com/Rigu1/jekyll-linkpreview.git", :branch => "master"
+  gem "jekyll-sitemap"
 end

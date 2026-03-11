@@ -3,6 +3,7 @@
 # plugins
 plugins:
   - jekyll-linkpreview
+  - jekyll-sitemap
 
 # Import the theme
 theme: jekyll-theme-chirpy
